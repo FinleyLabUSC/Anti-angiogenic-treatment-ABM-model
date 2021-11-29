@@ -1,10 +1,5 @@
 #include "Diffusibles.h"
 
-/*
- * REVISIONS
- * - get rid of early-stopping
- */
-
 Diffusibles::Diffusibles(double size, double spatialStep, std::vector<double> &diffParams){
     dx = spatialStep;
     maxPG = 1;
