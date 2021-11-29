@@ -2,6 +2,8 @@ import numpy as np
 import sys
 import os
 
+sim = int(sys.argv[2])
+
 cancerParams = np.zeros((32,1))
 ## force parameters
 cancerParams[0] = 50 # mu
@@ -37,7 +39,7 @@ cancerParams[23] = 10 # dampingFactor
 cancerParams[24] = 0.001 # prolProbBound
 ## chemotherapy resistance
 cancerParams[25] = 1 # acid-inactivation of chemotherapeutic NOT USED IN THIS STUDY. IGNORE
-cancerParams[26] = 10**(-4.5) # chemoTolRate -> rate at which the cells gains tolerance
+cancerParams[26] = 1e-5 # chemoTolRate -> rate at which the cells gains tolerance
 cancerParams[27] = 0.02*cancerParams[10] # chemoTimeThresh -> fraction of cell cycle cell needs to be exposed to drug for to induce tolerance
 cancerParams[28] = 0.01 # chemoAccThresh -> concentration of drug needed to induce tolerance
 cancerParams[29] = 90 # chemoTolerance -> base amount of drug damage to kill a cell
@@ -58,11 +60,11 @@ envParams[5] = 0.25 # decrease factor for unstable vessel mu and nutrient conc. 
 
 # start at 1240
 treatParams = np.zeros((8,1))
-treatParams[0] = 1 # angioTreatment (1 = no treatment). Set very high (1e6) when turning treatment on
-treatParams[1] = 20000 # tumor diameter at start of angioTreatment -> if no treatment, set beyond treatment duration or else vessel health will be affected
+treatParams[0] = 1 # angioTreatment (1 = no treatment, 0 = full inhibition)
+treatParams[1] = 12400 # tumor diameter at start of angioTreatment -> if no treatment, set beyond treatment duration or else vessel health will be affected
 treatParams[2] = 1000 # days anio treatment is on
 treatParams[3] = 0 # days angio treatment is off
-treatParams[4] = 20000 # tumor diameter at start of chemotherapy
+treatParams[4] = 12400 # tumor diameter at start of chemotherapy
 treatParams[5] = 5 # days chemotherapy is on
 treatParams[6] = 10 # days chemotherapy is off
 treatParams[7] = 1560 # tumor diameter at end of simulation
