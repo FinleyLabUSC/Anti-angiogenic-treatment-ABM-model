@@ -68,7 +68,7 @@ void Environment::simulate(double tstep) {
         angiogenesis(diff);
 
         steps += 1;
-        //printStep(diff, steps*tstep);
+        printStep(diff, steps*tstep);
         if(fmod(steps*tstep, 1) == 0) {
             updateTimeSeries(diff);
         }
@@ -80,7 +80,7 @@ void Environment::simulate(double tstep) {
                 // turn on treatment
                 angioTreatmentInit = true;
                 angioTreatmentOn = true;
-                vesRec /= angioTreatment;
+                vesRec *= angioTreatment;
             }
             if(tumorD >= startDiameterChemo && !chemotherapyInit){
                 // first time reaching start diameter,
@@ -90,8 +90,7 @@ void Environment::simulate(double tstep) {
                 chemoStartTime = static_cast<double>(steps)*tstep/24;
             }
             if(tumorD >= endDiameter){break;}
-	    if(steps*tstep/24 >= 100){break;}
-	    //if(steps*tstep/24 >= endDiameter){break;}
+	        if(steps*tstep/24 >= 80){break;}
         }
 
         if(cc_list.empty()){break;}

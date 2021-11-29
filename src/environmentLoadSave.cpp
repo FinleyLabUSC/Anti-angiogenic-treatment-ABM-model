@@ -88,7 +88,9 @@ void Environment::save(Diffusibles &diff, double tstep) {
     myfile << time << "," << numCancer << "," << td << "," << chemoStartTime << "," << numVessels << std::endl;
     myfile.close();
 
-    myfile.open(saveDir+"/cancerCells.csv");
+    // remove the extra timeStates folder
+    if(fmod(steps*tstep,24) == 0){
+    myfile.open(saveDir+"/timeStates/cancerCells"+std::to_string(steps*tstep/24)+".csv");
     for(auto &cell : cc_list){
         int state = 0;
         int mState = 0;
@@ -111,11 +113,12 @@ void Environment::save(Diffusibles &diff, double tstep) {
     }
     myfile.close();
 
-    myfile.open(saveDir+"/vessels.csv");
+    myfile.open(saveDir+"/timeStates/vessels"+std::to_string(steps*tstep/24)+".csv");
     for(auto &ves : vessel_list){
         myfile << ves.x[0] << "," << ves.x[1] << "," << ves.radius << std::endl;
     }
     myfile.close();
+    }
 
     myfile.open(saveDir+"/O2.csv");
     for(int i=0; i<diff.O2.size(); ++i){
@@ -175,6 +178,14 @@ void Environment::save(Diffusibles &diff, double tstep) {
     myfile << std::endl;
     myfile.close();
 
+    myfile.open(saveDir+"/aliveCancerTS.csv");
+    myfile << aliveCancerTS[0];
+    for(int i=1; i<aliveCancerTS.size(); ++i){
+	myfile << "," << aliveCancerTS[i];
+    }
+    myfile << std::endl;
+    myfile.close();
+
     myfile.open(saveDir+"/diameterTS.csv");
     myfile << diameterTS[0];
     for(int i=1; i<diameterTS.size(); ++i){
@@ -203,6 +214,14 @@ void Environment::save(Diffusibles &diff, double tstep) {
     myfile << phTS[0];
     for(int i=1; i<phTS.size(); ++i){
 	myfile << "," << phTS[i];
+    }
+    myfile << std::endl;
+    myfile.close();
+
+    myfile.open(saveDir+"/vegfTS.csv");
+    myfile << vegfTS[0];
+    for(int i=1; i<vegfTS.size(); ++i){
+	myfile << "," << vegfTS[i];
     }
     myfile << std::endl;
     myfile.close();

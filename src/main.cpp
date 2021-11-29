@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
     std::string set = argv[2];
 
     std::cout << "Making save folder\n";
-    std::string str = "mkdir -p ./"+folder+"/set_" + set;
+    std::string str = "mkdir -p ./"+folder+"/set_" + set + "/timeStates";
     const char *command = str.c_str();
     std::system(command);
 

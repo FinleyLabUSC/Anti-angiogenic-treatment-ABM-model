@@ -1,11 +1,8 @@
 #include "Diffusibles.h"
 
 /*
- * make a grid for damping - less damping where there isn't host tissue
- *
- * instead of different diffCoeff, add a "refresh rate" at the vessels
- *  default is O_next += Oblood - O_next
- *  tumor vessles is O_next += 0.x * (Oblood - O_next)
+ * REVISIONS
+ * - get rid of early-stopping
  */
 
 Diffusibles::Diffusibles(double size, double spatialStep, std::vector<double> &diffParams){
@@ -87,8 +84,10 @@ Diffusibles::Diffusibles(double size, double spatialStep, std::vector<double> &d
 void Diffusibles::runDiffusion(double time, bool chemoOn) {
     /*
      * use finite difference to calculate diffusion
-     * if max % change between steps is < 1e-4, assume equilibrium and end early
+     * if max % change between steps is < cutoff, assume equilibrium and end early
      */
+
+    double cutoff = 1e-4;//1e-6;
 
     // set time step based on Do (the largest diffusion coeff) and pg (glucose uptake)
     double dt = 0.2*dx*dx/(Do*maxPG);
@@ -96,7 +95,7 @@ void Diffusibles::runDiffusion(double time, bool chemoOn) {
 
     // diffuse  nutrients
     for(int q=0; q<steps; ++q) {
-#pragma omp parallel for
+#pragma omp parallel for collapse(2)
         for (int i = 1; i < O2.size() - 1; ++i) {
             for (int j = 1; j < O2.size() - 1; ++j) {
                 double maxDiff = 0;
@@ -123,6 +122,9 @@ void Diffusibles::runDiffusion(double time, bool chemoOn) {
                     O2_next[i][j] += dc[i][j]*(0.056 - O2_next[i][j]);
                     glu_next[i][j] += dc[i][j]*(5.0 - glu_next[i][j]);
                     H_next[i][j] += dc[i][j]*((pow(10,-7.4)*1e3) - H_next[i][j]);
+                    /*O2_next[i][j] += dc[i][j]*(0.056 - O2[i][j]);
+                    glu_next[i][j] += dc[i][j]*(5.0 - glu[i][j]);
+                    H_next[i][j] += dc[i][j]*((pow(10,-7.4)*1e3) - H[i][j]);*/
                 }
 
                 // FIND MAX % DIFFERENCE AT EACH SITE
@@ -159,7 +161,7 @@ void Diffusibles::runDiffusion(double time, bool chemoOn) {
             }
         }
 
-#pragma omp parallel for
+#pragma omp parallel for collapse(2)
         for (int i = 1; i < O2.size() - 1; ++i) {
             for (int j = 1; j < O2.size() - 1; ++j) {
                 // update grids
@@ -168,15 +170,18 @@ void Diffusibles::runDiffusion(double time, bool chemoOn) {
                 H[i][j] = H_next[i][j];
             }
         }
-        if(maxDiff < 1e-4 && q > 10){break;}
+        if(maxDiff < cutoff && q > 10){
+            //std::cout << "nutrient diff: " << maxDiff << std::endl; 
+            break;}
     }
 
     // diffuse cytokines
     dt = 0.2*dx*dx/DVEGF;
     dt = std::min(1.0, dt);
     steps = std::max(1.0, (time*60*60)/dt);
+    double stepsTaken = 0;
     for(int q=0; q<steps; ++q) {
-#pragma omp parallel for
+#pragma omp parallel for collapse(2)
         for (int i = 1; i < O2.size() - 1; ++i) {
             for (int j = 1; j < O2.size() - 1; ++j) {
                 double maxDiff = 0;
@@ -205,21 +210,26 @@ void Diffusibles::runDiffusion(double time, bool chemoOn) {
             }
         }
 
-#pragma omp parallel for
+#pragma omp parallel for collapse(2)
         for (int i = 1; i < O2.size() - 1; ++i) {
             for (int j = 1; j < O2.size() - 1; ++j) {
                 // update grids
                 VEGF[i][j] = VEGF_next[i][j];
             }
         }
-        if(maxDiff < 1e-4 && q > 10){break;}
+
+        stepsTaken++;
+        if(maxDiff < cutoff && q > 10){
+            //std::cout << "vegf diff: " << maxDiff << std::endl;
+            break;}
     }
+
 
     // diffuse chemotherapy
     dt = 0.2*dx*dx/Dc;
     steps = std::max(1.0, (time*60*60)/dt);
     for(int q=0; q<steps; ++q) {
-#pragma omp parallel for
+#pragma omp parallel for collapse(2)
         for (int i = 1; i < O2.size() - 1; ++i) {
             for (int j = 1; j < O2.size() - 1; ++j) {
                 double maxDiff = 0;
@@ -249,14 +259,14 @@ void Diffusibles::runDiffusion(double time, bool chemoOn) {
             }
         }
 
-#pragma omp parallel for
+#pragma omp parallel for collapse(2)
         for (int i = 1; i < O2.size() - 1; ++i) {
             for (int j = 1; j < O2.size() - 1; ++j) {
                 // update grids
                 C[i][j] = C_next[i][j];
             }
         }
-        if(maxDiff < 1e-4 && q > 10){break;}
+        if(maxDiff < cutoff && q > 10){break;}
     }
 }
 

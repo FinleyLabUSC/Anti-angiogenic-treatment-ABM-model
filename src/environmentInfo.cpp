@@ -50,8 +50,8 @@ void Environment::printStep(Diffusibles &diff, double time) {
     avgProlProb /= cc_list.size();
 
     std::cout << "************************************\n"
-              << "Time (d): " << time/24 << std::endl
-              << "Tumor Diameter: " << tumorD << std::endl
+              << "Time (d): " << time/24 << std::endl;
+              /*<< "Tumor Diameter: " << tumorD << std::endl
               << "Cancer Cells: " << cc_list.size() << std::endl
               << "Proliferative cells: " << prolC << std::endl
               << "Hypoxic cancer cells: " << hc << std::endl
@@ -62,11 +62,11 @@ void Environment::printStep(Diffusibles &diff, double time) {
               << "Max pH: " << -log10(minH/1e3) << std::endl
               << "Avg O2: " << avgO2 << std::endl
               <<  "Max O2: " << maxO2 << std::endl
-              << "Avg Glu: " << avgGlu << std::endl
+              << "Avg Glu: " << avgGlu << std::endl;
               << "Max Glu: " << maxGlu << std::endl
               << "Avg pG: " << avgPG << std::endl
               << "Avg acidThreshold: " << avgAT << std::endl
-              << "Avg prolProb: " << avgProlProb << std::endl;
+              << "Avg prolProb: " << avgProlProb << std::endl;*/
 }
 
 void Environment::updateTimeSeries(Diffusibles &diff) {
@@ -82,29 +82,37 @@ void Environment::updateTimeSeries(Diffusibles &diff) {
     int hc = 0;
     int prolC = 0;
     int quiC = 0;
+    int aliveC = 0;
     for(auto &cell : cc_list){
         if(cell.hypoxic){hc++;}
         if(cell.metabState == "proliferative"){prolC++;}
         if(cell.metabState == "quiescent"){quiC++;}
         if(cell.state == "necrotic"){necC++;}
+	if(cell.state != "necrotic" && cell.state != "dead"){
+	    aliveC++;
+	}
     }
 
     hypoxicCancerTS.push_back(hc);
     necroticCancerTS.push_back(necC);
     prolCancerTS.push_back(prolC);
     quiCancerTS.push_back(quiC);
+    aliveCancerTS.push_back(aliveC);
 
     double minO2 = 0.056;
     double minGlu = 5.0;
     double minpH = 7.4;
+    double maxVEGF = 0;
     for(int i=0; i<diff.O2.size(); ++i){
 	for(int j=0; j<diff.O2.size(); ++j){
 	    minO2 = std::min(minO2, diff.O2[i][j]);
 	    minGlu = std::min(minGlu, diff.glu[i][j]);
 	    minpH = std::min(minpH, -log10(diff.H[i][j]*1e-3));
+	    maxVEGF = std::max(maxVEGF, diff.VEGF[i][j]);
 	}
     }
     o2TS.push_back(minO2);
     gluTS.push_back(minGlu);
     phTS.push_back(minpH);
+    vegfTS.push_back(maxVEGF);
 }

@@ -46,7 +46,7 @@ void Environment::calculateForces(double tstep, Diffusibles &diff) {
         cc_list[i].resetOverlap();
         for(auto &cell2 : cc_list){
             if(cc_list[i].id != cell2.id) {
-                cc_list[i].calculateOverlap(cell2.x, cell2.radius);
+                cc_list[i].calculateOverlap(cell2.x, cell2.radius, cell2.state);
             }
         }
         cc_list[i].isCompressed();
@@ -84,7 +84,7 @@ void Environment::runCancer(double tstep, Diffusibles &diff) {
 #pragma omp parallel for
     for(int i=0; i<cc_list.size(); ++i){
         cc_list[i].generalLocation(dx);
-        cc_list[i].migrate(tstep, diff);
+        cc_list[i].migrate(tstep, diff, vessel_list);
         cc_list[i].resetForces();
         for(auto &cell2 : cc_list){
             if(cc_list[i].id != cell2.id){

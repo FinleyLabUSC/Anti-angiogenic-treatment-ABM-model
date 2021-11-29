@@ -1,5 +1,10 @@
 #include "Environment.h"
 
+/*
+ * REVISIONS
+ * - calculation of tumor diameter is between cells with prolProb > 0.5
+ */
+
 void Environment::diffusion(double tstep, Diffusibles &diff) {
     /*
      * set cell locations on PDE grids
@@ -127,12 +132,14 @@ double Environment::tumorDiameter() {
 
     double maxDist = 0;
     for(auto& cell : cc_list){
-        for (auto &cell2 : cc_list) {
-            if (cell.id != cell2.id) {
-                double dx0 = cell.x[0] - cell2.x[0];
-                double dx1 = cell.x[1] - cell2.x[1];
-                double dist = sqrt(dx0 * dx0 + dx1 * dx1);
-                maxDist = std::max(maxDist, dist);
+        if(cell.prolProb > 0.5) {
+            for (auto &cell2 : cc_list) {
+                if (cell.id != cell2.id && cell2.prolProb > 0.1) {
+                    double dx0 = cell.x[0] - cell2.x[0];
+                    double dx1 = cell.x[1] - cell2.x[1];
+                    double dist = sqrt(dx0 * dx0 + dx1 * dx1);
+                    maxDist = std::max(maxDist, dist);
+                }
             }
         }
     }
@@ -152,7 +159,7 @@ void Environment::treatmentOnOff(double tstep) {
                 // reset "off" clock
                 angioOffTime = 0.0;
                 // adjust vessel recruitment rate to treatment value
-                vesRec /= angioTreatment;
+                vesRec *= angioTreatment;
             }
         } else{
             // if treatment is on, progress "on" clock

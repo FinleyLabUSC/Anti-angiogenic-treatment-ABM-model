@@ -2,6 +2,14 @@
 #include <cmath>
 #include <iostream>
 
+/*
+ * REVISIONS
+ * - necrotic cells
+ *  - shrink to a certain size
+ *  - no attractive force
+ *  - reduce mu
+ */
+
 Cancer::Cancer(std::array<double, 2> loc, double CD, double SD, int idx, std::vector<double> &cancerParams, bool initial, int N): mt((std::random_device())()) {
     /*
      * x -> location of cell at inception
@@ -121,12 +129,18 @@ void Cancer::prolifState() {
             || migratory);
 }
 
-void Cancer::migrate(double dt, Diffusibles &diff) {
+void Cancer::migrate(double dt, Diffusibles &diff, std::vector<Vessel> &vessels) {
     /*
      * if cell can migrate, randomly selects direction based on chemoattractant concentration
      * uses cell's general location on the PDE grid
      */
     if(state == "dead" || state == "necrotic" || !migratory){return;}
+
+    for(auto &v : vessels){
+        if(calcDistance(v.x) <= rmax + v.radius){
+            return;
+        }
+    }
 
     std::array<double, 8> dx = {-1, -1, -1, 0, 0, 1, 1, 1};
     std::array<double, 8> dy = {-1, 0, 1, -1, 1, -1, 0, 1};
@@ -188,9 +202,10 @@ void Cancer::progressNecrotic(double dt) {
     if(state != "necrotic"){return;}
 
     radius -= dt*necRadiusDecrease;
-    if(radius <= 0.1*diameter){
+    /*if(radius <= 0.1*diameter){
         state = "dead";
-    }
+    }*/
+    radius = std::max(radius, 0.25*diameter);
 }
 
 void Cancer::envEffects(double dt, Diffusibles &diff) {
@@ -231,7 +246,8 @@ void Cancer::chemotherapy(double tstep, Diffusibles &diff) {
         }
     }
     if (chemoDamage > chemoTolerance) {
-        state = "dead";
+        state = "necrotic";
+	mu *= 0.25;
     }
 }
 
@@ -308,7 +324,7 @@ void Cancer::calculateForces(std::array<double, 2> otherX, double otherRadius, d
     if(distance < rmax){
         // determine x and y distances between cell centers
         std::array<double, 2> dx = {(otherX[0]-x[0])/standardDiameter, (otherX[1]-x[1])/standardDiameter};
-        if(distance < (radius + otherRadius) && state!="necrotic"){
+        if(distance < (radius + otherRadius)){
             std::array<double, 2> force = repulsiveForce(dx, otherRadius/standardDiameter, otherMu);
             currentForces[0] += force[0];
             currentForces[1] += force[1];
@@ -362,12 +378,12 @@ void Cancer::neighboringCells(std::array<double, 2> otherX, int otherID, int oth
 }
 
 // overlap functions
-void Cancer::calculateOverlap(std::array<double, 2> otherX, double otherRadius) {
+void Cancer::calculateOverlap(std::array<double, 2> otherX, double otherRadius, std::string otherType) {
     /*
      * determine if  two  cells are overlapping
      */
     double distance = calcDistance(otherX);
-    if(distance < radius + otherRadius){
+    if(distance < radius + otherRadius && otherType != "necrotic"){
         currentOverlap += radius + otherRadius - distance;
     }
 }
@@ -452,6 +468,7 @@ void Cancer::atpProduction(Diffusibles &diff) {
         if(type == 0){
             // cancer cells become necrotic and shrink before dying
             state = "necrotic";
+            mu *= 0.25;
             metabState = "non-proliferative";
         } else {
             // other cells just die
@@ -464,6 +481,7 @@ void Cancer::atpProduction(Diffusibles &diff) {
     if(-log10(diff.H[generalX[0]][generalX[1]]*1e-3) < acidThreshold){
         if(type == 0){
             state = "necrotic";
+            mu *= 0.25;
             metabState = "non-proliferative";
         } else {
             metabState = "non-proliferative";
@@ -472,7 +490,7 @@ void Cancer::atpProduction(Diffusibles &diff) {
     }
 
     // if O2 concentration is too low, cell becomes hypoxic
-    hypoxic = (diff.O2[generalX[0]][generalX[1]] < 0.056*0.1) && state!="dead" && state!="necrotic";
+    hypoxic = (diff.O2[generalX[0]][generalX[1]] < 0.002) && state!="dead" && state!="necrotic";
 }
 
 // other functions
