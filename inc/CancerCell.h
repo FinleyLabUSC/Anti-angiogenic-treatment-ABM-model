@@ -8,6 +8,7 @@
 #include <random>
 #include <string>
 #include "Diffusibles.h"
+#include "Vessel.h"
 
 class Cancer{
 public:
@@ -26,7 +27,7 @@ public:
     // interactions with environment
     void envEffects(double dt, Diffusibles &diff);
     void progressNecrotic(double dt);
-    void migrate(double dt, Diffusibles &diff);
+    void migrate(double dt, Diffusibles &diff, std::vector<Vessel> &vessels);
     void chemotherapy(double tstep, Diffusibles &diff);
 
     // force functions
@@ -37,7 +38,7 @@ public:
     void resetForces();
 
     // overlap functions
-    void calculateOverlap(std::array<double, 2> otherX, double otherRadius);
+    void calculateOverlap(std::array<double, 2> otherX, double otherRadius, std::string otherType);
     void resetOverlap();
     void isCompressed();
 

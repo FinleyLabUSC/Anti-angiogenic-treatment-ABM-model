@@ -66,6 +66,8 @@ private:
     std::vector<double> o2TS;
     std::vector<double> gluTS;
     std::vector<double> diameterTS;
+    std::vector<double> vegfTS;
+    std::vector<int> aliveCancerTS;
 
     // parameter lists
     std::vector<double> cancerParams;
